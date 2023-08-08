@@ -188,7 +188,7 @@ class Plane(object):
             wallet.get_wallet_context().add_money(50)
         else:
             #deduct stuff here
-            #wallet.get_wallet_context().add_money(-50)
+            wallet.get_wallet_context().add_money(-50)
             pass
         #KIIIIIIILLLLLL THHEEEHEHEHEHHEHE PLAAAAAAAAAAAAAAAAAAAAAAAANE
         pyglet.clock.unschedule(self.move_plane)
