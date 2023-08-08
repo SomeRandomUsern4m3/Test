@@ -48,7 +48,7 @@ class Game(pyglet.window.Window):
     #            i.button = None
     #            self.dialog_boxes.remove(i)
     def spawn_planes(self, dt):
-        if random.randint(0, 75) == 49:
+        if random.randint(0, 150) == 49:
             match str(random.randint(1,2)):
                 case "1":
                     #taking off plane
@@ -58,7 +58,7 @@ class Game(pyglet.window.Window):
                 case "2":
                     #landing plane
                     runway = self.runways[random.randint(0, len(self.runways) - 1)]
-                    self.planes.append(Plane(random.randint(1200, 1200), random.randint(900, 1200), random.choice(self.plane_types), "landing", runway=runway,batch=self.game_batch, group=self.plane_order))
+                    self.planes.append(Plane(random.randint(-800, 800), random.randint(900, 1200), random.choice(self.plane_types), "landing", runway=runway,batch=self.game_batch, group=self.plane_order))
                 case _:
                     print("No plane spawned")
     def move_objects(self, x ,y):
@@ -87,6 +87,13 @@ class Game(pyglet.window.Window):
         for i in self.taxiways:
             i.sprite.x += x
             i.sprite.y += y
+    def resize_objects(self, amount):
+        for i in self.runways:
+            i.sprite.scale += amount
+        for i in self.planes:
+            i.sprite.scale += amount
+        for i in self.taxiways:
+            i.sprite.scale += amount
     def create_classes(self):
         self.runways.append(Runway(0.7,self.planes, self.game_batch, self.runway_order))
         self.taxiways.append(Taxiway(self.width//2, self.height//2 - 100, self.game_batch, self.runway_order))
@@ -94,6 +101,8 @@ class Game(pyglet.window.Window):
         #self.planes.append(Plane(50,50,"jet", "landing",self.runways[0], self.game_batch, self.plane_order))
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
         self.move_objects(dx, dy)
+    def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
+            self.resize_objects(scroll_x)
     def on_mouse_press(self, x, y, button, modifiers):
         try:
             if tools.separating_axis_theorem(tools.getRect(tools.center_image(pyglet.shapes.Rectangle(x,y,5,5, (0,0,0)))), tools.getRect(self.dialog_box.button)):
@@ -158,7 +167,6 @@ class Plane(object):
         if not tools.separating_axis_theorem(tools.getRect(self.runway_target.sprite, "left"), tools.getRect(self.sprite)):
             if not self.locked:
                 self.locked = True
-                self.success = True
                 pyglet.clock.schedule_once(self.finish_plane, delay=5)
     def death_clock(self, dt):
         self.top_bar.width -=  7 * dt
@@ -167,6 +175,7 @@ class Plane(object):
             self.background_gui = None
             self.top_bar = None
             pyglet.clock.unschedule(self.death_clock)
+            wallet.get_wallet_context().add_money(-50)
             self.finish_plane("lose")
 
     def waiting_to_takeoff(self, dt):
@@ -183,13 +192,6 @@ class Plane(object):
         else:
             self.selected = False
     def finish_plane(self, dt):
-        if self.success:
-            #add rewards here
-            wallet.get_wallet_context().add_money(50)
-        else:
-            #deduct stuff here
-            wallet.get_wallet_context().add_money(-50)
-            pass
         #KIIIIIIILLLLLL THHEEEHEHEHEHHEHE PLAAAAAAAAAAAAAAAAAAAAAAAANE
         pyglet.clock.unschedule(self.move_plane)
         pyglet.clock.unschedule(self.land_plane)
@@ -211,7 +213,7 @@ class Plane(object):
             else:
                 self.velocity = 0
                 pyglet.clock.unschedule(self.land_plane)
-                self.success = True
+                wallet.get_wallet_context().add_money(100)
                 print("fdhafh")
                 self.finish_plane(1)
         except AttributeError:
@@ -244,7 +246,7 @@ class Taxiway(object):
 class ClickDialog(object):
     def __init__(self, x, y, target, batch, group):
         self.background_sprite = tools.center_image(pyglet.shapes.Rectangle(target.sprite.x ,(target.sprite.y - target.sprite.height // 2) - 70, 100, 100,  (130,115,92), batch=batch, group=group))
-        self.button = tools.center_image(pyglet.shapes.Rectangle(self.background_sprite.x, self.background_sprite.y - 35, 80, 20, (156, 222, 159),  batch=batch, group=group))
+        self.button = tools.center_image(pyglet.shapes.Rectangle(self.background_sprite.x, self.background_sprite.y + self.background_sprite.height//2 - 15, 80, 20, (156, 222, 159),  batch=batch, group=group))
         if target.type == "landing":
             self.button_text = pyglet.text.Label('Land',
                             font_name='Arial',
@@ -271,7 +273,7 @@ class ClickDialog(object):
             self.background_sprite.x = self.target.sprite.x
             self.background_sprite.y = (self.target.sprite.y - self.target.sprite.height // 2) - 70
             self.button.x = self.background_sprite.x
-            self.button.y = self.background_sprite.y - 35
+            self.button.y = self.background_sprite.y + self.background_sprite.height//2 - 15
             self.button_text.x = self.button.x
             self.button_text.y = self.button.y + 2
         except AttributeError:
